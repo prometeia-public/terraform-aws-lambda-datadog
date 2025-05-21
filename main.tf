@@ -234,4 +234,9 @@ resource "aws_lambda_function" "this" {
       subnet_ids                  = var.vpc_config_subnet_ids
     }
   }
+    lifecycle {
+    ignore_changes = [
+      source_code_hash,
+    ]
+  }
 }
