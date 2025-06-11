@@ -238,6 +238,8 @@ resource "aws_lambda_function" "this" {
     ignore_changes = [
       source_code_hash,
       filename,
+      layers[2],
     ]
   }
 }
+
