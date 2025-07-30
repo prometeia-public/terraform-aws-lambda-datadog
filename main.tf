@@ -55,7 +55,7 @@ locals {
 
 locals {
   datadog_extension_layer_arn    = "${local.datadog_layer_name_base}:Datadog-Extension${local.datadog_extension_layer_suffix}:${var.datadog_extension_layer_version}"
-  datadog_extension_layer_suffix = local.datadog_layer_suffix
+  datadog_extension_layer_suffix = var.fips ? "${local.datadog_layer_suffix}-FIPS" : local.datadog_layer_suffix
 
   datadog_lambda_layer_arn     = "${local.datadog_layer_name_base}:${local.datadog_lambda_layer_runtime}${local.datadog_lambda_layer_suffix}:${local.datadog_lambda_layer_version}"
   datadog_lambda_layer_suffix  = contains(["java", "nodejs"], local.runtime_base) ? "" : local.datadog_layer_suffix # java and nodejs don't have separate layers for ARM
@@ -63,19 +63,22 @@ locals {
   datadog_lambda_layer_version = lookup(local.runtime_base_layer_version_map, local.runtime_base, "")
 
   datadog_account_id      = (data.aws_partition.current.partition == "aws-us-gov") ? "002406178527" : "464622532012"
-  datadog_layer_name_base = "arn:${data.aws_partition.current.partition}:lambda:${data.aws_region.current.name}:${local.datadog_account_id}:layer"
+  datadog_layer_name_base = "arn:${data.aws_partition.current.partition}:lambda:${data.aws_region.current.region}:${local.datadog_account_id}:layer"
   datadog_layer_suffix    = lookup(local.architecture_layer_suffix_map, var.architectures[0])
 
   environment_variables = {
-    common = {
-      DD_CAPTURE_LAMBDA_PAYLOAD  = "false"
-      DD_LOGS_INJECTION          = "false"
-      DD_MERGE_XRAY_TRACES       = "false"
-      DD_SERVERLESS_LOGS_ENABLED = "true"
-      DD_SERVICE                 = var.function_name
-      DD_SITE                    = "datadoghq.com"
-      DD_TRACE_ENABLED           = "true"
-    }
+    common = merge(
+      {
+        DD_CAPTURE_LAMBDA_PAYLOAD  = "false"
+        DD_LOGS_INJECTION          = "false"
+        DD_MERGE_XRAY_TRACES       = "false"
+        DD_SERVERLESS_LOGS_ENABLED = "true"
+        DD_SERVICE                 = var.function_name
+        DD_SITE                    = "datadoghq.com"
+        DD_TRACE_ENABLED           = "true"
+      },
+      var.fips ? { DD_LAMBDA_FIPS_MODE = "true" } : {}
+    )
     runtime = lookup(local.runtime_base_environment_variable_map, local.runtime_base, {})
   }
 
@@ -87,7 +90,7 @@ locals {
   }
 
   tags = {
-    dd_sls_terraform_module = "3.1.0"
+    dd_sls_terraform_module = "3.2.0"
   }
 }
 
@@ -174,9 +177,9 @@ resource "aws_lambda_function" "this" {
   # Datadog layers are defined in single element lists
   # This allows for runtimes where a lambda layer is not needed by concatenating an empty list
   layers = concat(
-    local.layers.extension,
+    var.layers,
     local.layers.lambda,
-    var.layers
+    local.layers.extension,
   )
 
   dynamic "logging_config" {
