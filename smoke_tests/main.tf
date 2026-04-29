@@ -54,6 +54,26 @@ data "archive_file" "zip_node_code" {
   output_path = "${path.module}/build/hello-node.zip"
 }
 
+module "lambda-python-3-14" {
+  source = "../"
+
+  filename      = "${path.module}/build/hello-python.zip"
+  function_name = "terraform-smoketest-python-3-14-${var.datadog_service_name}-function"
+  role          = aws_iam_role.lambda_role.arn
+  handler       = "app.lambda_handler"
+  runtime       = "python3.14"
+  architectures = ["arm64"]
+  memory_size   = 256
+
+  environment_variables = {
+    "DD_API_KEY_SECRET_ARN" : var.datadog_secret_arn
+    "DD_ENV" : "dev"
+    "DD_SERVICE" : var.datadog_service_name
+    "DD_SITE" : var.datadog_site
+    "DD_VERSION" : "1.0.0"
+  }
+}
+
 module "lambda-python-3-13" {
   source = "../"
 
@@ -163,6 +183,25 @@ module "lambda-python-3-8" {
   handler       = "app.lambda_handler"
   runtime       = "python3.8"
   architectures = ["arm64"]
+  memory_size   = 256
+
+  environment_variables = {
+    "DD_API_KEY_SECRET_ARN" : var.datadog_secret_arn
+    "DD_ENV" : "dev"
+    "DD_SERVICE" : var.datadog_service_name
+    "DD_SITE" : var.datadog_site
+    "DD_VERSION" : "1.0.0"
+  }
+}
+
+module "lambda-node-24" {
+  source = "../"
+
+  filename      = "${path.module}/build/hello-node.zip"
+  function_name = "terraform-smoketest-node-24-${var.datadog_service_name}-function"
+  role          = aws_iam_role.lambda_role.arn
+  handler       = "index.lambda_handler"
+  runtime       = "nodejs24.x"
   memory_size   = 256
 
   environment_variables = {

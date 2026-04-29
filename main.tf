@@ -20,36 +20,48 @@ locals {
     python = {
       DD_LAMBDA_HANDLER = var.handler
     }
+    ruby = {
+      DD_LAMBDA_HANDLER = var.handler
+    }
   }
   runtime_base_handler_map = {
     dotnet = var.handler
     java   = var.handler
     nodejs = "/opt/nodejs/node_modules/datadog-lambda-js/handler.handler"
     python = "datadog_lambda.handler.handler"
+    ruby   = var.handler
   }
   runtime_base_layer_version_map = {
     dotnet = var.datadog_dotnet_layer_version
     java   = var.datadog_java_layer_version
     nodejs = var.datadog_node_layer_version
     python = var.datadog_python_layer_version
+    ruby   = var.datadog_ruby_layer_version
   }
   runtime_layer_map = {
     "dotnet6"    = "dd-trace-dotnet"
     "dotnet7"    = "dd-trace-dotnet"
     "dotnet8"    = "dd-trace-dotnet"
+    "dotnet10"   = "dd-trace-dotnet"
     "java8.al2"  = "dd-trace-java"
     "java11"     = "dd-trace-java"
     "java17"     = "dd-trace-java"
     "java21"     = "dd-trace-java"
+    "java25"     = "dd-trace-java"
     "nodejs18.x" = "Datadog-Node18-x"
     "nodejs20.x" = "Datadog-Node20-x"
     "nodejs22.x" = "Datadog-Node22-x"
+    "nodejs24.x" = "Datadog-Node24-x"
     "python3.8"  = "Datadog-Python38"
     "python3.9"  = "Datadog-Python39"
     "python3.10" = "Datadog-Python310"
     "python3.11" = "Datadog-Python311"
     "python3.12" = "Datadog-Python312"
     "python3.13" = "Datadog-Python313"
+    "python3.14" = "Datadog-Python314"
+    "ruby3.2"    = "Datadog-Ruby3-2"
+    "ruby3.3"    = "Datadog-Ruby3-3"
+    "ruby3.4"    = "Datadog-Ruby3-4"
   }
 }
 
@@ -90,7 +102,7 @@ locals {
   }
 
   tags = {
-    dd_sls_terraform_module = "4.0.0"
+    dd_sls_terraform_module = "4.6.0"
   }
 }
 
@@ -101,21 +113,28 @@ check "runtime_support" {
         "dotnet6",
         "dotnet7",
         "dotnet8",
+        "dotnet10",
         "java8.al2",
         "java11",
         "java17",
         "java21",
+        "java25",
         "nodejs18.x",
         "nodejs20.x",
         "nodejs22.x",
+        "nodejs24.x",
         "python3.8",
         "python3.9",
         "python3.10",
         "python3.11",
         "python3.12",
         "python3.13",
+        "python3.14",
         "provided.al2",
         "provided.al2023",
+        "ruby3.2",
+        "ruby3.3",
+        "ruby3.4",
       ],
     var.runtime)
     error_message = "${var.runtime} Lambda runtime is not supported by the lambda-datadog Terraform module"

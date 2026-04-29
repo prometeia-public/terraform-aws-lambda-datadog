@@ -1,5 +1,5 @@
 resource "aws_iam_role" "lambda_role" {
-  name = "terraform-example-dotnet-${var.datadog_service_name}-role"
+  name = "terraform-example-ruby-${var.datadog_service_name}-role"
   assume_role_policy = jsonencode(
     {
       "Version" : "2012-10-17",
@@ -17,7 +17,7 @@ resource "aws_iam_role" "lambda_role" {
 }
 
 resource "aws_iam_policy" "secrets_manager_read_policy" {
-  name        = "terraform-example-dotnet-${var.datadog_service_name}-secrets-manager-policy"
+  name        = "terraform-example-ruby-${var.datadog_service_name}-secrets-manager-policy"
   description = "Policy to allow read access to Secrets Manager"
   policy = jsonencode({
     Version = "2012-10-17"
@@ -42,22 +42,31 @@ resource "aws_iam_role_policy_attachment" "attach_secrets_manager_policy" {
   policy_arn = aws_iam_policy.secrets_manager_read_policy.arn
 }
 
+data "archive_file" "zip_code" {
+  type        = "zip"
+  source_dir  = "${path.module}/src/"
+  output_path = "${path.module}/hello-ruby.zip"
+}
+
+
+
 module "lambda-datadog" {
   source = "../../"
 
-  filename         = "${path.module}/src/HelloWorld/bin/release/net10.0/hello-dotnet.zip"
-  source_code_hash = filebase64sha256("${path.module}/src/HelloWorld/bin/release/net10.0/hello-dotnet.zip")
-  function_name    = "terraform-example-dotnet-${var.datadog_service_name}-function"
-  role             = aws_iam_role.lambda_role.arn
-  handler          = "HelloWorld::HelloWorld.Function::Handler"
-  runtime          = "dotnet10"
-  memory_size      = 256
+  filename      = "${path.module}/hello-ruby.zip"
+  function_name = "terraform-example-ruby-${var.datadog_service_name}-function"
+  role          = aws_iam_role.lambda_role.arn
+  handler       = "rb_handler.hello"
+  runtime       = "ruby3.4"
+  architectures = ["arm64"]
+  memory_size   = 256
 
   environment_variables = {
     "DD_API_KEY_SECRET_ARN" : var.datadog_secret_arn
     "DD_ENV" : "dev"
     "DD_SERVICE" : var.datadog_service_name
-    "DD_SITE" : var.datadog_site
+    "DD_SITE": var.datadog_site
     "DD_VERSION" : "1.0.0"
   }
 }
+
