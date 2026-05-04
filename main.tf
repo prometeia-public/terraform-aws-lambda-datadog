@@ -6,29 +6,33 @@ locals {
     x86_64 = "",
     arm64  = "-ARM"
   }
+  lwa_layer_name_map = {
+    x86_64 = "LambdaAdapterLayerX86"
+    arm64  = "LambdaAdapterLayerArm64"
+  }
   runtime_base = regex("[a-z]+", var.runtime)
   runtime_base_environment_variable_map = {
-    dotnet = {
+    dotnet = var.lwa_instrumentation ? {} : {
       AWS_LAMBDA_EXEC_WRAPPER = "/opt/datadog_wrapper"
     }
-    java = {
+    java = var.lwa_instrumentation ? {} : {
       AWS_LAMBDA_EXEC_WRAPPER = "/opt/datadog_wrapper"
     }
-    nodejs = {
+    nodejs = var.lwa_instrumentation ? {} : {
       DD_LAMBDA_HANDLER = var.handler
     }
-    python = {
+    python = var.lwa_instrumentation ? {} : {
       DD_LAMBDA_HANDLER = var.handler
     }
-    ruby = {
+    ruby = var.lwa_instrumentation ? {} : {
       DD_LAMBDA_HANDLER = var.handler
     }
   }
   runtime_base_handler_map = {
     dotnet = var.handler
     java   = var.handler
-    nodejs = "/opt/nodejs/node_modules/datadog-lambda-js/handler.handler"
-    python = "datadog_lambda.handler.handler"
+    nodejs = var.lwa_instrumentation ? var.handler : "/opt/nodejs/node_modules/datadog-lambda-js/handler.handler"
+    python = var.lwa_instrumentation ? var.handler : "datadog_lambda.handler.handler"
     ruby   = var.handler
   }
   runtime_base_layer_version_map = {
@@ -89,7 +93,12 @@ locals {
         DD_SITE                    = "datadoghq.com"
         DD_TRACE_ENABLED           = "true"
       },
-      var.fips ? { DD_LAMBDA_FIPS_MODE = "true" } : {}
+      var.fips ? { DD_LAMBDA_FIPS_MODE = "true" } : {},
+      var.lwa_instrumentation ? {
+        DD_TRACE_PARTIAL_FLUSH_MIN_SPANS = "1"
+        DD_TRACE_PARTIAL_FLUSH_ENABLED   = "false"
+        AWS_LWA_LAMBDA_RUNTIME_API_PROXY = "127.0.0.1:9002"
+      } : {}
     )
     runtime = lookup(local.runtime_base_environment_variable_map, local.runtime_base, {})
   }
@@ -99,6 +108,7 @@ locals {
   layers = {
     extension = [local.datadog_extension_layer_arn]
     lambda    = local.datadog_lambda_layer_runtime == "" ? [] : [local.datadog_lambda_layer_arn]
+    lwa       = var.lwa_instrumentation ? ["arn:${data.aws_partition.current.partition}:lambda:${data.aws_region.current.region}:753240598075:layer:${lookup(local.lwa_layer_name_map, var.architectures[0])}:${var.lwa_layer_version}"] : []
   }
 
   tags = {
@@ -199,6 +209,7 @@ resource "aws_lambda_function" "this" {
     var.layers,
     local.layers.lambda,
     local.layers.extension,
+    local.layers.lwa,
   )
 
   dynamic "logging_config" {

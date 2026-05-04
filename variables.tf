@@ -44,6 +44,18 @@ variable "fips" {
   default     = false
 }
 
+variable "lwa_instrumentation" {
+  description = "Enable Lambda Web Adapter instrumentation mode. When true, the handler is not overridden by the Datadog wrapper, preserving the original handler for LWA-based functions. The LWA layer is automatically added."
+  type        = bool
+  default     = false
+}
+
+variable "lwa_layer_version" {
+  description = "Version for the AWS Lambda Web Adapter layer. Only used when lwa_instrumentation is true."
+  type        = number
+  default     = 27
+}
+
 
 ###################
 # Lambda Function
