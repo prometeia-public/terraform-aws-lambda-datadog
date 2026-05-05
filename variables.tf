@@ -44,6 +44,12 @@ variable "fips" {
   default     = false
 }
 
+variable "lwa_instrumentation" {
+  description = "Enable Lambda Web Adapter instrumentation mode. When true, the handler is not overridden by the Datadog wrapper, preserving the original handler for LWA-based functions. The LWA layer is automatically added."
+  type        = bool
+  default     = false
+}
+
 
 ###################
 # Lambda Function

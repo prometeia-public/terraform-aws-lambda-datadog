@@ -89,12 +89,17 @@ locals {
         DD_SITE                    = "datadoghq.com"
         DD_TRACE_ENABLED           = "true"
       },
-      var.fips ? { DD_LAMBDA_FIPS_MODE = "true" } : {}
+      var.fips ? { DD_LAMBDA_FIPS_MODE = "true" } : {},
+      var.lwa_instrumentation ? {
+        DD_TRACE_PARTIAL_FLUSH_MIN_SPANS = "1"
+        DD_TRACE_PARTIAL_FLUSH_ENABLED   = "false"
+        AWS_LWA_LAMBDA_RUNTIME_API_PROXY = "127.0.0.1:9002"
+      } : {}
     )
-    runtime = lookup(local.runtime_base_environment_variable_map, local.runtime_base, {})
+    runtime = var.lwa_instrumentation ? {} : lookup(local.runtime_base_environment_variable_map, local.runtime_base, {})
   }
 
-  handler = lookup(local.runtime_base_handler_map, local.runtime_base, var.handler)
+  handler = var.lwa_instrumentation ? var.handler : lookup(local.runtime_base_handler_map, local.runtime_base, var.handler)
 
   layers = {
     extension = [local.datadog_extension_layer_arn]
