@@ -50,12 +50,6 @@ variable "lwa_instrumentation" {
   default     = false
 }
 
-variable "lwa_layer_version" {
-  description = "Version for the AWS Lambda Web Adapter layer. Only used when lwa_instrumentation is true."
-  type        = number
-  default     = 27
-}
-
 
 ###################
 # Lambda Function

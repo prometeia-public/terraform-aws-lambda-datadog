@@ -6,10 +6,6 @@ locals {
     x86_64 = "",
     arm64  = "-ARM"
   }
-  lwa_layer_name_map = {
-    x86_64 = "LambdaAdapterLayerX86"
-    arm64  = "LambdaAdapterLayerArm64"
-  }
   runtime_base = regex("[a-z]+", var.runtime)
   runtime_base_environment_variable_map = {
     dotnet = {
@@ -108,7 +104,6 @@ locals {
   layers = {
     extension = [local.datadog_extension_layer_arn]
     lambda    = local.datadog_lambda_layer_runtime == "" ? [] : [local.datadog_lambda_layer_arn]
-    lwa       = var.lwa_instrumentation ? ["arn:${data.aws_partition.current.partition}:lambda:${data.aws_region.current.region}:753240598075:layer:${lookup(local.lwa_layer_name_map, var.architectures[0])}:${var.lwa_layer_version}"] : []
   }
 
   tags = {
@@ -209,7 +204,6 @@ resource "aws_lambda_function" "this" {
     var.layers,
     local.layers.lambda,
     local.layers.extension,
-    local.layers.lwa,
   )
 
   dynamic "logging_config" {
