@@ -12,27 +12,27 @@ locals {
   }
   runtime_base = regex("[a-z]+", var.runtime)
   runtime_base_environment_variable_map = {
-    dotnet = var.lwa_instrumentation ? {} : {
+    dotnet = {
       AWS_LAMBDA_EXEC_WRAPPER = "/opt/datadog_wrapper"
     }
-    java = var.lwa_instrumentation ? {} : {
+    java = {
       AWS_LAMBDA_EXEC_WRAPPER = "/opt/datadog_wrapper"
     }
-    nodejs = var.lwa_instrumentation ? {} : {
+    nodejs = {
       DD_LAMBDA_HANDLER = var.handler
     }
-    python = var.lwa_instrumentation ? {} : {
+    python = {
       DD_LAMBDA_HANDLER = var.handler
     }
-    ruby = var.lwa_instrumentation ? {} : {
+    ruby = {
       DD_LAMBDA_HANDLER = var.handler
     }
   }
   runtime_base_handler_map = {
     dotnet = var.handler
     java   = var.handler
-    nodejs = var.lwa_instrumentation ? var.handler : "/opt/nodejs/node_modules/datadog-lambda-js/handler.handler"
-    python = var.lwa_instrumentation ? var.handler : "datadog_lambda.handler.handler"
+    nodejs = "/opt/nodejs/node_modules/datadog-lambda-js/handler.handler"
+    python = "datadog_lambda.handler.handler"
     ruby   = var.handler
   }
   runtime_base_layer_version_map = {
@@ -100,10 +100,10 @@ locals {
         AWS_LWA_LAMBDA_RUNTIME_API_PROXY = "127.0.0.1:9002"
       } : {}
     )
-    runtime = lookup(local.runtime_base_environment_variable_map, local.runtime_base, {})
+    runtime = var.lwa_instrumentation ? {} : lookup(local.runtime_base_environment_variable_map, local.runtime_base, {})
   }
 
-  handler = lookup(local.runtime_base_handler_map, local.runtime_base, var.handler)
+  handler = var.lwa_instrumentation ? var.handler : lookup(local.runtime_base_handler_map, local.runtime_base, var.handler)
 
   layers = {
     extension = [local.datadog_extension_layer_arn]
